@@ -7,7 +7,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
 
-var redis = require('ioredis');
+var redis = require('redis');
 var redisStore = require('connect-redis')(session);
 var client= redis.createClient();
 

@@ -3,20 +3,13 @@
  */
 
 // var Auth = require('');
-var Auth = require('mysql');
 
 module.exports = function (passport) {
 
     var express = require('express');
     var router = express.Router();
-
-    var host = 'localhost';
-    var port = 27017;
-    var dbName = 'test';
-    var collectionName = 'test_auth';
-
-    var MongoDB = require('../data/mongo').MongoDB;
-    var mongoDB = new MongoDB(dbName, host, port);
+    var Auth = require('../data/auth').Auth;
+    var Auth = new Auth();
 
     router.get('/', function(req, res, next) {
     });
@@ -31,16 +24,12 @@ module.exports = function (passport) {
         var pw = req.params.pw;
         var name = req.params.name;
 
-        Auth.save();
-        Topic.save();
-        mongoDB.save(collectionName, {username:id, password:pw, displayname:name},  function (err, docs) {
+        Auth.save({username:id, password:pw, displayname:name}, function (err, docs) {
             if (err)
-                res.send("err");
-            else if(docs.ops == undefined)
-                res.send("이미 존재하는 id입니다.");
+                res.send("이미 존재하는 id 입니다.");
             else
-                res.send(docs.ops[0]);
-        })
+                res.send(docs);
+        });
     });
 
     router.get('/count', function (req, res, next) {
@@ -55,7 +44,7 @@ module.exports = function (passport) {
     router.post('/login',
         passport.authenticate(
             'local', {
-                successRedirect: '/auth/welcome',
+                successRedirect: '/topic',
                 failureRedirect: '/auth/login',
                 failureFlash: false
             }
@@ -71,7 +60,7 @@ module.exports = function (passport) {
     router.get('/google/callback',
         passport.authenticate(
             'google', {
-                successRedirect: '/',
+                successRedirect: '/topic',
                 failureRedirect: '/auth/login',
                 failureFlash: false
         })
