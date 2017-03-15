@@ -1,0 +1,28 @@
+//
+   Created by sss on 2017-03-09.
+
+doctype html
+html
+    head
+        meta(charset='utf-8')
+     body
+         h1
+             a(href='/topic') Server Side JavaScript
+         ul
+             each topic in topics
+                 li
+                     - _id = encodeURIComponent(topic._id)
+                     a(href='/topic/' + _id)= topic.title
+         article
+            - _id = encodeURIComponent(topic._id)
+            form(action='/topic/'+_id+'/add' method='post')
+                p
+                    input(type='text' name='title' placeholder='title' value=topic.title)
+                p
+                    textarea(name='description' placeholder='description')
+                        =topic.description
+                p
+                    input(type='text' name='author' placeholder='author' value=topic.author)
+                p
+                    input(type='submit')
+
