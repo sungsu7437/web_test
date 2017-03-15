@@ -4,51 +4,73 @@
 var express = require('express');
 var router = express.Router();
 
-// Connection URL
-var host = 'localhost';
-var port = 27017;
-var dbName = 'test';
-var collectionName = 'test_insert';
-
-var MongoDB = require('../data/mongo').MongoDB;
-
-var mongoDB = new MongoDB(dbName, host, port);
+var Topic = require('../data/topic').Topic;
+var db_topic = new Topic();
 
 router.get('/add', function (req, res, next) {
-    mongoDB.findAll(collectionName, function (err, result) {
-        res.render('add', {topics:result});
-    })
+    db_topic.findAll(function (err, topics) {
+        if (err || !topics) {
+            res.status(500);
+        }
+        else {
+            res.render('add', {topics:topics});
+        }
+    });
 });
 
 router.get('/:id/edit', function (req, res, next) {
     var id = req.params.id;
 
-    mongoDB.findAll(collectionName, function (err, topics) {
-        mongoDB.findById(collectionName, id, function (err, topic) {
-            return res.render('edit', {topics: topics, topic: topic});
-        })
-    })
+    db_topic.findAll(function (err, topics) {
+        if (err || !topics) {
+            res.status(500);
+        }
+        else {
+            db_topic.findById(id, function (err, topic) {
+                if (err || !topic) {
+                    res.status(500);
+                }
+                else {
+                    res.render('edit', {topics: topics, topic: topic});
+                }
+
+            })
+        }
+    });
 });
 
 router.get('/:id/delete', function (req, res, next) {
     var id = req.params.id;
 
-    mongoDB.findAll(collectionName, function (err, topics) {
-        mongoDB.findById(collectionName, id, function (err, topic) {
-            res.render('delete', {topics:topics, topic: topic});
-        })
-    })
-
+    db_topic.findAll(function (err, topics) {
+        if (err || !topics) {
+            res.status(500);
+        }
+        else {
+            db_topic.findById(id, function (err, topic) {
+                if (err || !topic) {
+                    res.status(500);
+                }
+                else {
+                    res.render('delete', {topics: topics, topic: topic});
+                }
+            })
+        }
+    });
 });
 
 
 router.post('/:id/delete', function (req, res, next) {
     var id = req.params.id;
 
-    mongoDB.delete(collectionName, id, function (err, docs) {
-
-        res.redirect('/topic/');
-    })
+    db_topic.delete(id, function (err, result) {
+        if (err || !result) {
+            res.status(500);
+        }
+        else {
+            res.redirect('/topic');
+        }
+    });
 });
 
 router.post('/:id/add', function (req, res, next) {
@@ -57,7 +79,7 @@ router.post('/:id/add', function (req, res, next) {
     var title = req.body.title;
     var author = req.body.author;
 
-    mongoDB.update(collectionName, id,
+    db_topic.update(id,
         {
             $set: {
                 class:"topic",
@@ -65,26 +87,45 @@ router.post('/:id/add', function (req, res, next) {
                 title:title, author:author
             }
         }
-        , function (err, docs) {
-        res.redirect('/topic/' +id);
-    })
-
+        , function (err, result) {
+            if (err || !result) {
+                res.status(500);
+            }
+            else {
+                res.redirect('/topic/' +id);
+            }
+        });
 });
 
 router.get(['/', '/:id'], function (req, res, next) {
     var id = req.params.id;
 
     if (id) {
-        mongoDB.findAll(collectionName, function (err, topics) {
-            mongoDB.findById(collectionName, id, function (err, topic) {
-                res.render('view', {topics:topics, topic: topic});
-            })
-        })
+        db_topic.findAll(function (err, topics) {
+            if (err || !topics) {
+                res.status(500);
+            }
+            else {
+                db_topic.findById(id, function (err, topic) {
+                    if (err || !topic) {
+                        res.status(500);
+                    }
+                    else {
+                        res.render('view', {topics: topics, topic: topic});
+                    }
+                })
+            }
+        });
     }
     else {
-        mongoDB.findAll(collectionName, function (err, result) {
-            res.render('view', {topics:result});
-        })
+        db_topic.findAll(function (err, topics) {
+            if (err || !topics) {
+                res.status(500);
+            }
+            else {
+                res.render('view', {topics: topics});
+            }
+        });
     }
 });
 
@@ -93,9 +134,21 @@ router.post('/', function (req, res, next) {
     var description = req.body.description;
     var author = req.body.author;
 
-    mongoDB.save(collectionName, {class:"topic", description:description, title:title, author:author}, function (err, docs) {
-        res.redirect('/topic/' +docs['ops'][0]["_id"]);
-    })
+    db_topic.save(
+        {
+            class:"topic",
+            description:description,
+            title:title, author:author
+        }
+        , function (err, result) {
+            if (err || !result) {
+                res.status(500);
+            }
+            else {
+                res.redirect('/topic/' +result["_id"]);
+            }
+        }
+    );
 });
 
 module.exports = router;
