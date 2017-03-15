@@ -4,118 +4,121 @@
 var express = require('express');
 var router = express.Router();
 
-var Topic = require('../data/topic').Topic;
-var db_topic = new Topic();
+var host = 'localhost';
+var port = 27017;
+var dbName = 'test';
+var collectionName = 'test_insert';
 
-router.get('/add', function (req, res, next) {
+var MongoDB = require('../data/mongo').MongoDB;
+var db_topic = new MongoDB(dbName, host, port, collectionName);
+
+function loggedIn(req, res, next) {
+    if (req.user) {
+        next();
+    } else {
+        res.redirect('/auth/login');
+    }
+}
+
+router.get('/add', loggedIn, function (req, res, next) {
     db_topic.findAll(function (err, topics) {
         if (err || !topics) {
             res.status(500);
         }
         else {
-            res.render('add', {topics:topics});
+            res.render('add', {topics:topics, author:req.user});
         }
     });
 });
 
-router.get('/:id/edit', function (req, res, next) {
+router.get('/:id/:author/edit', loggedIn, function (req, res, next) {
     var id = req.params.id;
+    var author = req.params.author;
 
-    db_topic.findAll(function (err, topics) {
-        if (err || !topics) {
-            res.status(500);
-        }
-        else {
-            db_topic.findById(id, function (err, topic) {
-                if (err || !topic) {
-                    res.status(500);
-                }
-                else {
-                    res.render('edit', {topics: topics, topic: topic});
-                }
-
-            })
-        }
-    });
-});
-
-router.get('/:id/delete', function (req, res, next) {
-    var id = req.params.id;
-
-    db_topic.findAll(function (err, topics) {
-        if (err || !topics) {
-            res.status(500);
-        }
-        else {
-            db_topic.findById(id, function (err, topic) {
-                if (err || !topic) {
-                    res.status(500);
-                }
-                else {
-                    res.render('delete', {topics: topics, topic: topic});
-                }
-            })
-        }
-    });
-});
-
-
-router.post('/:id/delete', function (req, res, next) {
-    var id = req.params.id;
-
-    db_topic.delete(id, function (err, result) {
-        if (err || !result) {
-            res.status(500);
-        }
-        else {
-            res.redirect('/topic');
-        }
-    });
-});
-
-router.post('/:id/add', function (req, res, next) {
-    var id = req.params.id;
-    var description = req.body.description;
-    var title = req.body.title;
-    var author = req.body.author;
-
-    db_topic.update(id,
-        {
-            $set: {
-                class:"topic",
-                description:description,
-                title:title, author:author
+    if (req.user != author) {
+        res.redirect('/topic');
+    } else {
+        db_topic.findById(id, function (err, topic) {
+            if (err || !topic) {
+                res.status(500);
             }
+            else {
+                res.render('edit', {topic: topic, author: req.user});
+            }
+        })
+    }
+});
+
+    router.get('/:id/delete', loggedIn, function (req, res, next) {//POST로 바꾼다 DELETE 쓸수있으면 쓰셈 GET은 필요할 때만 사용한다. 기준에 맞춰서
+    var id = req.params.id;
+    //여기서 확인한다.
+
+    db_topic.findById(id, function (err, topic) {
+        if (err || !topic) {
+            res.status(500);
         }
-        , function (err, result) {
+        else {
+            res.render('delete', {topic: topic});
+        }
+    })
+});
+
+
+router.post('/:id/delete', loggedIn, function (req, res, next) {
+    var id = req.params.id;
+
+    if (req.user != req.body.author) {
+        res.redirect('/topic');
+    } else {
+        db_topic.delete(id, function (err, result) {
             if (err || !result) {
                 res.status(500);
             }
             else {
-                res.redirect('/topic/' +id);
+                res.redirect('/topic');
             }
         });
+    }
 });
 
-router.get(['/', '/:id'], function (req, res, next) {
+router.post('/:id/edit', loggedIn, function (req, res, next) {
+    var id = req.params.id;
+
+    if (req.user != req.body.author) {
+        res.redirect('/topic');
+    } else {
+        var text = {
+            class: "topic",
+            title: req.body.title,
+            description: req.body.description,
+            author: req.user
+        };
+
+        db_topic.update(id,
+            {$set: text},
+            function (err, result) {
+                if (err || !result) {
+                    res.status(500);
+                }
+                else {
+                    res.redirect('/topic/' + id);
+                }
+            });
+    }
+});
+
+router.get(['/', '/:id'], loggedIn, function (req, res, next) {
     var id = req.params.id;
 
     if (id) {
-        db_topic.findAll(function (err, topics) {
-            if (err || !topics) {
+        db_topic.findById(id, function (err, topic) {
+            if (err || !topic) {
                 res.status(500);
             }
             else {
-                db_topic.findById(id, function (err, topic) {
-                    if (err || !topic) {
-                        res.status(500);
-                    }
-                    else {
-                        res.render('view', {topics: topics, topic: topic});
-                    }
-                })
+                res.render('view', {topic: topic});
             }
-        });
+        })
     }
     else {
         db_topic.findAll(function (err, topics) {
@@ -129,18 +132,15 @@ router.get(['/', '/:id'], function (req, res, next) {
     }
 });
 
-router.post('/', function (req, res, next) {
-    var title = req.body.title;
-    var description = req.body.description;
-    var author = req.body.author;
+router.post('/', loggedIn, function (req, res, next) {
+    var text = {
+        class:"topic",
+        title:req.body.title,
+        description:req.body.description,
+        author:req.user
+    };
 
-    db_topic.save(
-        {
-            class:"topic",
-            description:description,
-            title:title, author:author
-        }
-        , function (err, result) {
+    db_topic.save(text, function (err, result) {
             if (err || !result) {
                 res.status(500);
             }

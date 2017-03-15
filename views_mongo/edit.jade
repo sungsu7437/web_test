@@ -8,21 +8,18 @@ html
      body
          h1
              a(href='/topic') Server Side JavaScript
-         ul
-             each topic in topics
-                 li
-                     - _id = encodeURIComponent(topic._id)
-                     a(href='/topic/' + _id)= topic.title
+
          article
             - _id = encodeURIComponent(topic._id)
-            form(action='/topic/'+_id+'/add' method='post')
+            form(action='/topic/'+_id+'/edit' method='post')
                 p
                     input(type='text' name='title' placeholder='title' value=topic.title)
                 p
                     textarea(name='description' placeholder='description')
                         =topic.description
                 p
-                    input(type='text' name='author' placeholder='author' value=topic.author)
+                    div= 'by ' + author
                 p
                     input(type='submit')
+                input(type='hidden' name='author' value=topic.author)
 

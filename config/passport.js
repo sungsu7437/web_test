@@ -9,8 +9,14 @@ module.exports = function (app) {
     var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
     var OAuth2Strategy = require('passport-oauth').OAuth2Strategy;
 
-    var Passport = require('../data/passport').Passport;
-    var db_passport = new Passport();
+    var host = 'localhost';
+    var port = 27017;
+    var dbName = 'test';
+    var collectionName = 'test_auth';
+
+    var MongoDB = require('../data/mongo').MongoDB;
+    var db_passport = new MongoDB(dbName, host, port, collectionName);
+
 
     // var host = 'localhost';
     // var port = 27017;
@@ -30,7 +36,7 @@ module.exports = function (app) {
 
     passport.deserializeUser(function (username, done) {
 
-        db_passport.findByUserName(username, function (err, result) {
+            db_passport.findByUserName(username, function (err, result) {
             if(err || !result)
                 done('There is no user.');
             else
@@ -84,10 +90,12 @@ module.exports = function (app) {
                 if (err || !userinfo) {
                     //아이디가 존재하지 않는 경우
                     db_passport.save({username:username, displayname:displayname}, function (err, result) {
-                        if (err || !result)
+                        if (err || !result) {
                             done('Error');
-                        else
-                            done(null, result);
+                        }
+                        else {
+                            done(null, result.ops[0]);
+                        }
                     })
                 }
                 else {

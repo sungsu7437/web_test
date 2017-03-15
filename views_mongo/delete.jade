@@ -8,11 +8,7 @@ html
     body
         h1
             a(href='/topic') Server Side JavaScript
-        ul
-            each topic in topics
-                li
-                    - _id = encodeURIComponent(topic._id)
-                    a(href='/topic/' + _id)= topic.title
+
         article
            h1= '장말 삭제하시겠습니까?  ' + topic.title
            - _id = encodeURIComponent(topic._id)

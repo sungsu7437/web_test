@@ -9,10 +9,11 @@ html
         h1
             a(href='/topic') Server Side JavaScript
         ul
-            each topic in topics
-                li
-                    - _id = encodeURIComponent(topic._id)
-                    a(href='/topic/' + _id)= topic.title
+            if topics
+                each topic in topics
+                    li
+                        - _id = encodeURIComponent(topic._id)
+                        a(href='/topic/' + _id)= topic.title
         article
             if topic
                 h2= topic.title
@@ -26,10 +27,15 @@ html
                 a(href='/topic/add') add
             if topic
                 - _id = encodeURIComponent(topic._id)
-                li
-                    a(href='/topic/'+_id+'/edit') edit
-                li
-                    a(href='/topic/' + _id + '/delete') delete
+                - author = encodeURIComponent(topic.author)
+                form(action='/topic/' + _id + '/' + author +'/edit')
+                    li
+                        button edit
+                form(action='/topic/' + _id + '/delete' method='post' )
+                    li
+                        button delete
+                        input(type='hidden' name='author' value=topic.author)
+
 
 
 
